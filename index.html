@@ -182,11 +182,27 @@ requestAnimationFrame(frame);
 
 /* sound button: unmutes the video, or plays soft wind noise on the placeholder */
 let ac = null, gain = null, on = false;
+const FADE_IN = 2000, FADE_OUT = 600;     // fade times in ms (change these to taste)
+let fadeRaf = 0;
+function fadeVideo(to, ms) {              // smoothly ramps the video's volume
+  cancelAnimationFrame(fadeRaf);
+  const from = vid.volume, t0 = performance.now();
+  (function step(now) {
+    const p = Math.min((now - t0) / ms, 1);
+    vid.volume = Math.min(1, Math.max(0, from + (to - from) * p));
+    if (p < 1) fadeRaf = requestAnimationFrame(step);
+    else if (to === 0) vid.muted = true;
+  })(t0);
+}
 const btn = document.getElementById("snd");
 btn.innerHTML = MUTE;
 btn.onclick = () => {
   on = !on; btn.innerHTML = on ? VOL : MUTE;
-  if (vid) { vid.muted = !on; return; }
+  if (vid) {
+    if (on) { vid.volume = 0; vid.muted = false; fadeVideo(1, FADE_IN); }   // fade in from silence
+    else fadeVideo(0, FADE_OUT);                                              // fade out, then mute
+    return;
+  }
   try {
     if (!ac) {
       ac = new (window.AudioContext || window.webkitAudioContext)();
@@ -194,9 +210,10 @@ btn.onclick = () => {
       for (let i=0; i<d.length; i++) { last = (last + .02*(Math.random()*2-1)) / 1.02; d[i] = last*3.5; }
       const src = ac.createBufferSource(); src.buffer = buf; src.loop = true;
       const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 500;
-      gain = ac.createGain(); src.connect(lp); lp.connect(gain); gain.connect(ac.destination); src.start();
+      gain = ac.createGain(); gain.gain.value = 0; src.connect(lp); lp.connect(gain); gain.connect(ac.destination); src.start();
     }
-    gain.gain.value = on ? .25 : 0; if (ac.state === "suspended") ac.resume();
+    if (ac.state === "suspended") ac.resume();
+    gain.gain.setTargetAtTime(on ? .25 : 0, ac.currentTime, on ? FADE_IN/3000 : FADE_OUT/3000);
   } catch(e){}
 };
 
