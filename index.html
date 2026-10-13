@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ffxke</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="locked">
+<canvas id="bg"></canvas>
+<div class="shade"></div><div class="scan"></div>
+<div id="enter" role="button" tabindex="0"><span>[ click to enter ]</span></div>
+
+<main>
+  <img class="pfp" id="pfp" alt="profile picture">
+  <h1 id="name">ffxke</h1>
+  <div class="presence"><span class="pdot dnd" id="pdot"></span><span id="ptext">do not disturb</span></div>
+  <div class="row">
+    <span class="handle" id="handle">@revictimised</span>
+  </div>
+  <div class="stats">
+    <span><svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg><em id="views" style="font-style:normal">0</em></span>
+    <span class="sep">/</span>
+    <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>EST.<em id="est" style="font-style:normal">2026</em></span>
+  </div>
+  <div class="div">▸ LINKS</div>
+  <div class="cards" id="cards"></div>
+</main>
+
+<button id="snd" aria-label="toggle sound" title="sound"></button>
+
+<script>
+/* ✏️ EDIT THIS — your whole profile */
+const profile = {
+  name: "ffxke",
+  handle: "@revictimised",
+  est: "2026",
+  bgVideo: "c6.mp4",   // path or URL to your background video. "" = animated placeholder
+  bgVideoWebm: "c6.webm",   // backup for browsers that can't play mp4 (H.264)
+  links: [
+    { icon: "tiktok", label: "TikTok",     sub: "@revictimised", url: "https://tiktok.com/@revictimised" },
+    { icon: "globe",  label: "gxnn.lol", sub: "gxnn.lol", url: "https://gxnn.lol" }
+  ]
+};
+
+const ICONS = {
+  tiktok:'<svg viewBox="0 0 24 24" style="color:#ff2d55"><path d="M16 3v10.5a4.5 4.5 0 11-4.5-4.5M16 3c.4 2.5 2.2 4.1 5 4.3"/></svg>',
+  globe:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/></svg>',
+  discord:'<svg viewBox="0 0 24 24"><path d="M5 6c2-1.5 4-2 7-2s5 .5 7 2c1.5 3 2 6 2 10-2 1.5-4 2-5 2l-1-2c-2 .5-4 .5-6 0l-1 2c-1 0-3-.5-5-2 0-4 .5-7 2-10z"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/></svg>',
+  github:'<svg viewBox="0 0 24 24"><path d="M9 19c-4 1-4-2-6-2m12 4v-3a3 3 0 00-1-2c3 0 6-1 6-6a5 5 0 00-1-3 5 5 0 000-3s-1-.3-3 1a10 10 0 00-6 0c-2-1.300-3-1-3-1a5 5 0 000 3 5 5 0 00-1 3c0 5 3 6 6 6a3 3 0 00-1 2v3"/></svg>'
+};
+const VOL='<svg viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M15.5 8.500a5 5 0 010 7M18.500 5.500a9 9 0 010 13"/></svg>';
+const MUTE='<svg viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/></svg>';
+
+document.getElementById("name").textContent = profile.name;
+document.getElementById("handle").textContent = profile.handle;
+document.getElementById("est").textContent = profile.est;
+document.title = profile.name;
+
+/* placeholder pfp (inline SVG) */
+const pfpSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a2a33"/><stop offset="1" stop-color="#0d0d11"/></linearGradient></defs><rect width="100" height="100" fill="url(#g)"/><circle cx="50" cy="38" r="17" fill="#555560"/><path d="M14 100c2-26 17-38 36-38s34 12 36 38z" fill="#555560"/></svg>';
+document.getElementById("pfp").src = "data:image/svg+xml," + encodeURIComponent(pfpSvg);
+
+/* discord sync: live avatar + status (falls back to placeholder / last known status) */
+const DISCORD_API = "https://api.realy.wtf/v1/discord?id=746117601289044050";
+const LABELS = { online: "online", idle: "idle", dnd: "do not disturb", offline: "offline" };
+function setPresence(d){
+  const st = LABELS[d.status] ? d.status : "offline";
+  let txt = LABELS[st];
+  const cs = d.customStatus;
+  const csText = typeof cs === "string" ? cs : (cs && (cs.text || cs.state));
+  const act = Array.isArray(d.activities) && d.activities.find(a => a && a.name && a.name !== "Custom Status");
+  if (csText) txt = csText; else if (act) txt = act.name;
+  document.getElementById("pdot").className = "pdot " + st;
+  document.getElementById("ptext").textContent = txt;
+}
+async function syncDiscord(){
+  try {
+    const r = await fetch(DISCORD_API, { cache: "no-store" });
+    if (!r.ok) return;
+    const d = await r.json();
+    setPresence(d);
+    if (d.avatar) {
+      const u = d.avatar + (d.avatar.includes("?") ? "&" : "?") + "size=256";
+      const t = new Image(); t.onload = () => { document.getElementById("pfp").src = u; }; t.src = u;
+    }
+  } catch(e){}
+}
+syncDiscord(); setInterval(syncDiscord, 30000);
+
+/* link cards */
+const cards = document.getElementById("cards");
+profile.links.forEach(l => {
+  const a = document.createElement("a");
+  a.className = "card"; a.href = l.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+  a.innerHTML = '<i></i><i></i><i></i><i></i><b>' + (ICONS[l.icon] || ICONS.globe) + '<span></span></b><small></small>';
+  a.querySelector("span").textContent = l.label;
+  a.querySelector("small").textContent = l.sub;
+  cards.appendChild(a);
+});
+
+/* view counter (this browser only) */
+let v = 1;
+try { v = (+localStorage.getItem("bc_views") || 0) + 1; localStorage.setItem("bc_views", v); } catch(e){}
+const viewsEl = document.getElementById("views");
+viewsEl.textContent = "0";
+function countUp(el, to, ms) {            // animates 0 -> total, easing out
+  const t0 = performance.now();
+  (function tick(now) {
+    const p = Math.min((now - t0) / ms, 1);
+    el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(tick);
+  })(t0);
+}
+
+/* background: real video if set, otherwise animated placeholder */
+const cv = document.getElementById("bg"), ctx = cv.getContext("2d");
+let vid = null, live = false;   // live = page unlocked (after "click to enter")
+if (profile.bgVideo) {
+  vid = document.createElement("video");
+  vid.id = "vid";
+  let usingWebm = !!profile.bgVideoWebm && !vid.canPlayType('video/mp4; codecs="avc1.42E01E, mp4a.40.2"');
+  vid.src = usingWebm ? profile.bgVideoWebm : profile.bgVideo; vid.setAttribute("muted",""); vid.loop = vid.muted = vid.playsInline = true;
+  vid.preload = "auto";
+  vid.onerror = () => {
+    if (!usingWebm && profile.bgVideoWebm) { usingWebm = true; vid.src = profile.bgVideoWebm; if (live) vid.play().catch(()=>{}); return; }
+    console.warn("Background video failed to load: " + profile.bgVideo + " (is it in the same folder as index.html?)");
+    vid.remove(); vid = null; cv.style.display = ""; requestAnimationFrame(frame);
+  };
+  document.body.prepend(vid); cv.style.display = "none";
+}
+let W, H, stars = [];
+function size(){
+  const d = Math.min(devicePixelRatio || 1, 2);
+  W = cv.width = innerWidth * d; H = cv.height = innerHeight * d;
+  stars = Array.from({length:90}, () => ({x:Math.random()*W, y:Math.random()*H*.5, r:Math.random()*1.3+.3, p:Math.random()*6}));
+}
+addEventListener("resize", size); size();
+function ridge(x, t){
+  const n = x / W;
+  const peak = Math.exp(-Math.pow((n - .5) / .22, 2)) * .3;
+  return H * (.72 - peak) + Math.sin(n*38)*H*.004 + Math.sin(n*11+1)*H*.012;
+}
+function frame(ms){
+  if (vid) return;
+  const t = ms / 1000;
+  const sky = ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,"#15151a"); sky.addColorStop(.6,"#2a211f"); sky.addColorStop(1,"#0c0c0e");
+  ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
+  stars.forEach(s => { ctx.globalAlpha = .35 + .35*Math.sin(t*1.5 + s.p); ctx.fillStyle = "#fff"; ctx.fillRect(s.x, s.y, s.r, s.r); });
+  ctx.globalAlpha = 1;
+  /* mountain */
+  const mg = ctx.createLinearGradient(0,H*.4,0,H*.75);
+  mg.addColorStop(0,"#b4623a"); mg.addColorStop(.35,"#6b4636"); mg.addColorStop(1,"#1b1716");
+  ctx.fillStyle = mg; ctx.beginPath(); ctx.moveTo(0,H);
+  for (let x=0; x<=W; x+=6) ctx.lineTo(x, ridge(x,t));
+  ctx.lineTo(W,H); ctx.fill();
+  /* snow caps */
+  ctx.fillStyle = "rgba(235,225,215,.16)"; ctx.beginPath();
+  for (let x=W*.4; x<=W*.6; x+=6) ctx.lineTo(x, ridge(x,t)+Math.abs(Math.sin(x*.05))*H*.02);
+  ctx.lineTo(W*.6, ridge(W*.6,t)+H*.04); ctx.lineTo(W*.4, ridge(W*.4,t)+H*.04); ctx.fill();
+  /* dark tree line */
+  ctx.fillStyle = "#08090a"; ctx.beginPath(); ctx.moveTo(0,H);
+  for (let x=0; x<=W; x+=8) {
+    const k = Math.max(0, 1 - x/(W*.45));
+    ctx.lineTo(x, H*.82 - k*H*.3 + (x/8%2 ? -1 : 1)*H*.012*(0.4+k));
+  }
+  ctx.lineTo(W*.5,H); ctx.fill();
+  ctx.fillRect(0, H*.9, W, H);
+  /* drifting fog */
+  for (let i=0; i<4; i++) {
+    const fx = ((t*14*(i+1) + i*W*.37) % (W*1.6)) - W*.3, fy = H*(.62 + i*.07);
+    const g = ctx.createRadialGradient(fx,fy,0,fx,fy,W*.35);
+    g.addColorStop(0,"rgba(190,190,200,.09)"); g.addColorStop(1,"rgba(190,190,200,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, fy-W*.35, W, W*.7);
+  }
+  if (live) requestAnimationFrame(frame);   // draws one still frame while locked
+}
+requestAnimationFrame(frame);
+
+/* sound button: unmutes the video, or plays soft wind noise on the placeholder */
+let ac = null, gain = null, on = false;
+const btn = document.getElementById("snd");
+btn.innerHTML = MUTE;
+btn.onclick = () => {
+  on = !on; btn.innerHTML = on ? VOL : MUTE;
+  if (vid) { vid.muted = !on; return; }
+  try {
+    if (!ac) {
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      const buf = ac.createBuffer(1, ac.sampleRate*3, ac.sampleRate), d = buf.getChannelData(0); let last = 0;
+      for (let i=0; i<d.length; i++) { last = (last + .02*(Math.random()*2-1)) / 1.02; d[i] = last*3.5; }
+      const src = ac.createBufferSource(); src.buffer = buf; src.loop = true;
+      const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 500;
+      gain = ac.createGain(); src.connect(lp); lp.connect(gain); gain.connect(ac.destination); src.start();
+    }
+    gain.gain.value = on ? .25 : 0; if (ac.state === "suspended") ac.resume();
+  } catch(e){}
+};
+
+/* click to enter: browsers block autoplay with sound, so one click starts the audio */
+const gate = document.getElementById("enter");
+function enter(){
+  if (!on) btn.click();                      // unmute video / start sound
+  live = true;
+  document.body.classList.remove("locked");   // main page animations start now
+  if (vid) vid.play().catch(()=>{}); else requestAnimationFrame(frame);
+  gate.classList.add("gone");
+  countUp(viewsEl, v, 1800);               // count the views up once the page is revealed
+  setTimeout(() => gate.remove(), 900);
+}
+gate.onclick = enter;
+gate.onkeydown = e => { if (e.key === "Enter" || e.key === " ") enter(); };
+gate.focus();
+</script>
+</body>
+</html>
