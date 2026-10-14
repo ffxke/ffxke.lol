@@ -4,9 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ffxke · casino</title>
-<link rel="stylesheet" href="style.css?v=2">
+<base href="/casino/">
+<link rel="stylesheet" href="style.css">
 </head>
-<body
+<body>
 <svg width="0" height="0" style="position:absolute"><defs><radialGradient id="cg" cx="50%" cy="35%"><stop offset="0" stop-color="#e8fbff"/><stop offset="1" stop-color="#4aa8c8"/></radialGradient></defs></svg>
 <header class="top"><div class="logo">ffxke</div><nav><a id="n_home" onclick="go('home')">Home</a><a onclick="go('crash')">Games</a><a href="https://ffxke.lol" target="_top">About</a></nav><div class="acct"><span id="coinI"></span><b id="bal">1000.00</b><button class="plus" onclick="topup()" title="Add 500 play coins">+</button></div></header>
 <div class="shell"><aside id="side"></aside><main id="main"></main></div>
@@ -35,7 +36,7 @@ function adj(f){$('bet').value=Math.max(1,Math.floor(Math.min(bal,(+$('bet').val
 function mx(){$('bet').value=Math.max(1,Math.floor(bal));upd()}
 function resetBal(){if(busy)return;bal=1000;save();msg('Balance reset to 1000')}
 function about(){go('home');$('main').scrollTop=$('main').scrollHeight}
-const WIN_SRCS=['ffxke/.vscode/casino/cha%20ching.mp3','.vscode/casino/cha%20ching.mp3','cha%20ching.mp3','cha_ching.mp3'];
+const WIN_SRCS=['/.vscode/casino/cha%20ching.mp3','ffxke/.vscode/casino/cha%20ching.mp3','.vscode/casino/cha%20ching.mp3','cha%20ching.mp3','cha_ching.mp3'];
 let winAudio=null,winIdx=0;
 function winInit(){if(winAudio)return;try{winAudio=new Audio();winAudio.preload='auto';winAudio.onerror=()=>{if(++winIdx<WIN_SRCS.length){winAudio.src=WIN_SRCS[winIdx];winAudio.load()}else console.warn('win sound file not found')};winAudio.src=WIN_SRCS[0]}catch(e){}}
 winInit();
