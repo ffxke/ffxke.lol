@@ -63,3 +63,10 @@ svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-l
 /* nothing on the page animates until "click to enter" */
 body.locked main{animation:none;opacity:0}
 body.locked h1{animation:none}
+
+/* discord activities: one line per game / stream / song */
+.acts{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:6px;max-width:min(92vw,320px)}
+.act{display:flex;align-items:center;gap:7px;max-width:100%;font-size:.6rem;letter-spacing:.06em;color:var(--muted)}
+.act::before{content:"";width:5px;height:5px;border-radius:50%;flex:none;background:var(--c,#999);box-shadow:0 0 6px var(--c,#999)}
+.atype{flex:none;color:var(--c,#999)}
+.atext{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}

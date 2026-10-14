@@ -17,6 +17,7 @@
   <img class="pfp" id="pfp" alt="profile picture">
   <h1 id="name">ffxke</h1>
   <div class="presence"><span class="pdot dnd" id="pdot"></span><span id="ptext">do not disturb</span></div>
+  <div class="acts" id="acts"></div>
   <div class="row">
     <span class="handle" id="handle">@revictimised</span>
   </div>
@@ -66,15 +67,43 @@ document.getElementById("pfp").src = "data:image/svg+xml," + encodeURIComponent(
 /* discord sync: live avatar + status (falls back to placeholder / last known status) */
 const DISCORD_API = "https://api.realy.wtf/v1/discord?id=746117601289044050";
 const LABELS = { online: "online", idle: "idle", dnd: "do not disturb", offline: "offline" };
+const ACT_NAMES = { playing: 0, streaming: 1, listening: 2, watching: 3, custom: 4, competing: 5 };
+const ACT_STYLE = { 0: ["playing", "#c7c7d1"], 1: ["streaming", "#9146ff"], 2: ["listening", "#1db954"], 3: ["watching", "#4aa8ff"], 5: ["competing", "#ff9f1a"] };
+function actType(a){
+  const t = a.type;
+  if (typeof t === "number") return t;
+  const k = String(t || "").toLowerCase();
+  return k in ACT_NAMES ? ACT_NAMES[k] : (/^\d+$/.test(k) ? +k : 0);
+}
+function actText(a, type){
+  const name = a.name || "", details = a.details || "", state = a.state || "";
+  if (type === 2) return [details || name, state].filter(Boolean).join(" - ");   // song - artist
+  if (type === 1) return details || name;                                        // stream title
+  return [name, details || state].filter(Boolean).join(" · ");                   // game · what you're doing
+}
 function setPresence(d){
   const st = LABELS[d.status] ? d.status : "offline";
-  let txt = LABELS[st];
   const cs = d.customStatus;
-  const csText = typeof cs === "string" ? cs : (cs && (cs.text || cs.state));
-  const act = Array.isArray(d.activities) && d.activities.find(a => a && a.name && a.name !== "Custom Status");
-  if (csText) txt = csText; else if (act) txt = act.name;
+  let txt = typeof cs === "string" ? cs : (cs && (cs.text || cs.state)) || "";
+  const list = (Array.isArray(d.activities) ? d.activities : []).filter(Boolean);
+  const custom = list.find(a => actType(a) === 4);
+  if (!txt && custom) txt = custom.state || "";
   document.getElementById("pdot").className = "pdot " + st;
-  document.getElementById("ptext").textContent = txt;
+  document.getElementById("ptext").textContent = txt || LABELS[st];
+
+  // one line per activity (game, stream, music, ...), up to 4
+  const box = document.getElementById("acts");
+  box.textContent = "";
+  list.filter(a => actType(a) !== 4).slice(0, 4).forEach(a => {
+    const type = actType(a), [label, color] = ACT_STYLE[type] || ["playing", "#c7c7d1"];
+    const text = actText(a, type);
+    if (!text) return;
+    const row = document.createElement("div"); row.className = "act"; row.style.setProperty("--c", color);
+    const l = document.createElement("span"); l.className = "atype"; l.textContent = label;
+    const t = document.createElement("span"); t.className = "atext"; t.textContent = text;
+    row.append(l, t); box.appendChild(row);
+  });
+  if (list.length) console.debug("discord activities:", list);
 }
 async function syncDiscord(){
   try {

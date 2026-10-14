@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ffxke · casino</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs><radialGradient id="cg" cx="50%" cy="35%"><stop offset="0" stop-color="#e8fbff"/><stop offset="1" stop-color="#4aa8c8"/></radialGradient></defs></svg>
+<header class="top"><div class="logo">ffxke</div><nav><a id="n_home" onclick="go('home')">Home</a><a onclick="go('crash')">Games</a><a href="https://ffxke.lol" target="_top">About</a></nav><div class="acct"><span id="coinI"></span><b id="bal">1000.00</b><button class="plus" onclick="topup()" title="Add 500 play coins">+</button></div></header>
+<div class="shell"><aside id="side"></aside><main id="main"></main></div>
+<script>
+const COIN_SVG='<svg class="coin" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#1f6f8f"/><circle cx="32" cy="32" r="26" fill="url(#cg)"/><text x="32" y="43" text-anchor="middle" font-size="30" font-weight="800" fill="#0e4a63" font-family="system-ui">f</text></svg>';
+const COIN='<img class="coin" src="ffxkecurrency.png" alt="" onerror="this.outerHTML=COIN_SVG">';
+const IC={
+home:'<svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>',
+crash:'<svg viewBox="0 0 24 24"><path d="M12 2.5c3 2 5 5.5 5 9.5l-1.8 4H8.8L7 12c0-4 2-7.5 5-9.5z"/><circle cx="12" cy="9.5" r="1.7"/><path d="M7.2 12.5L4.5 16l3 .6M16.8 12.5l2.7 3.5-3 .6M10 19.2c.2 1.2.9 2 2 2.6 1.100-.6 1.800-1.400 2-2.600"/></svg>',
+dice:'<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="15" r="1"/><circle cx="12" cy="12" r="1"/></svg>',
+slots:'<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M9 6v12M15 6v12"/></svg>',
+flip:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/></svg>'};
+const G={
+crash:{n:'Crash',d:'Cash out before the multiplier blows.',tag:'HOT',c:'linear-gradient(135deg,#22c55e,#16a34a)'},
+dice:{n:'Dice',d:'Pick a side, roll for it.',c:'linear-gradient(135deg,#06d6f0,#14b8a6)'},
+slots:{n:'Slots',d:'Match symbols, chase the jackpot.',c:'linear-gradient(135deg,#f59e0b,#ef4444)'},
+flip:{n:'Coin Flip',d:'Heads or tails. Simple as that.',tag:'NEW',c:'linear-gradient(135deg,#a3e635,#f59e0b)'}};
+let bal=1000,cur='home',busy=false,cp=null;
+try{const s=localStorage.getItem('gxnn_bal');if(s!==null&&!isNaN(+s))bal=+s}catch(e){}
+const $=id=>document.getElementById(id);
+$('coinI').innerHTML=COIN;$('coinI').firstChild.style.cssText='width:18px;height:18px;display:block';
+function save(){try{localStorage.setItem('gxnn_bal',bal)}catch(e){}$('bal').textContent=bal.toFixed(2)}
+function msg(t,w){const m=$('msg');if(!m)return;m.textContent=t;m.className='msg '+(w===1?'win':w===0?'lose':'')}
+function bet(){let b=Math.floor(+$('bet').value);if(!b||b<1){msg('Enter a bet',0);return 0}if(b>bal){msg('Not enough coins',0);return 0}return b}
+function adj(f){$('bet').value=Math.max(1,Math.floor(Math.min(bal,(+$('bet').value||1)*f)));upd()}
+function mx(){$('bet').value=Math.max(1,Math.floor(bal));upd()}
+function resetBal(){if(busy)return;bal=1000;save();msg('Balance reset to 1000')}
+function about(){go('home');$('main').scrollTop=$('main').scrollHeight}
+const WIN_SRCS=['ffxke/.vscode/casino/cha%20ching.mp3','.vscode/casino/cha%20ching.mp3','cha%20ching.mp3','cha_ching.mp3'];
+let winAudio=null,winIdx=0;
+function winInit(){if(winAudio)return;try{winAudio=new Audio();winAudio.preload='auto';winAudio.onerror=()=>{if(++winIdx<WIN_SRCS.length){winAudio.src=WIN_SRCS[winIdx];winAudio.load()}else console.warn('win sound file not found')};winAudio.src=WIN_SRCS[0]}catch(e){}}
+winInit();
+function winSound(){try{winInit();winAudio.muted=false;winAudio.volume=1;winAudio.currentTime=0;const p=winAudio.play();if(p&&p.catch)p.catch(e=>console.warn('win sound blocked',e))}catch(e){}}
+addEventListener('pointerdown',()=>{try{winInit();winAudio.muted=true;const p=winAudio.play();if(p&&p.then)p.then(()=>{winAudio.pause();winAudio.currentTime=0;winAudio.muted=false}).catch(()=>{winAudio.muted=false})}catch(e){}},{once:true});
+function end(b,m,l){if(m>0){bal+=b*m;winSound();msg(l+' +'+Math.floor(b*m)+' coins',1)}else msg(l+' −'+b+' coins',0);save();upd();if(bal<1)msg('Broke! Reset your balance to play again',0)}
+$('side').innerHTML=['home','crash','dice','slots','flip'].map(k=>`<button id="s_${k}" onclick="go('${k}')">${IC[k]}${k=='home'?'Home':G[k].n}</button>`).join('');
+const note=`<div class="foot"><a class="dc" href="#" onclick="return false"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>Discord</a><p>ffxke casino is play money only. Coins have no real value and can't be bought, sold or withdrawn. Not affiliated with or endorsed by any real gambling site. <button class="reset" onclick="resetBal()">reset balance</button></p></div>`;
+function home(){return `<div class="hero"><span class="badge">🔥 Fake coins, zero risk</span><h1>Every round,<br>pure fun.</h1><p>Four minigames, instant payouts, and a balance that costs nothing. Play money only, nothing real is ever at stake.</p><button class="btn p" onclick="go('crash')">Play Crash ›</button><button class="btn" onclick="about()">How it works</button></div>
+<h3 class="sec">Games</h3><div class="grid">${Object.keys(G).map(k=>`<button class="gc" onclick="go('${k}')">${G[k].tag?`<span class="tag">${G[k].tag}</span>`:''}<div class="ic" style="background:${G[k].c}">${IC[k]}</div><b>${G[k].n}</b><span>${G[k].d}</span></button>`).join('')}</div>
+<div class="feat"><div><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg><b>No real money</b><span>Coins are fake. They can't be bought, sold or withdrawn.</span></div><div><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><b>Instant rounds</b><span>No waiting. Hit play and the result is right there.</span></div><div><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/></svg><b>Open odds</b><span>Every game shows its payouts right on the screen.</span></div></div>${note}`}
+let fp='H',dmo='o';
+const IMG={H:'heads.png',T:'tails.png'};
+const CHART=`<svg id="ch" class="chart" viewBox="0 0 400 240"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22c55e" stop-opacity=".35"/><stop offset="1" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs><g id="yl"></g><path id="ca" fill="url(#ag)"/><polyline id="cl" fill="none" stroke="#22c55e" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><g id="rk"><g transform="scale(.68)"><defs><linearGradient id="rb" x1="0" x2="1"><stop offset="0" stop-color="#c3ceda"/><stop offset=".45" stop-color="#fff"/><stop offset="1" stop-color="#a5b3c3"/></linearGradient><linearGradient id="rr" x1="0" x2="1"><stop offset="0" stop-color="#ff5a5f"/><stop offset="1" stop-color="#b3121f"/></linearGradient><radialGradient id="rf" cx="50%" cy="15%" r="85%"><stop offset="0" stop-color="#fff6b0"/><stop offset=".5" stop-color="#ffb02e"/><stop offset="1" stop-color="#ff4d1a"/></radialGradient><radialGradient id="rw" cx="35%" cy="30%"><stop offset="0" stop-color="#d9f3ff"/><stop offset="1" stop-color="#2a8fd0"/></radialGradient></defs><path id="fl" d="M-5 17Q0 36 5 17Z" fill="url(#rf)"/><path d="M-2.500 17Q0 26 2.500 17Z" fill="#fff6b0"/><g stroke="#1a1a1a" stroke-width="1" stroke-linejoin="round"><path d="M-6 3Q-15 8-14 20Q-9 15-6 14Z" fill="url(#rr)"/><path d="M6 3Q15 8 14 20Q9 15 6 14Z" fill="url(#rr)"/><path d="M0-23C8-15 9 3 7 15H-7C-9 3-8-15 0-23Z" fill="url(#rb)"/><path d="M0-23C4.500-19 6.700-14 7.400-9H-7.400C-6.700-14-4.500-19 0-23Z" fill="url(#rr)"/><path d="M-3.500 15h7l-1 3h-5z" fill="#3a414d"/><circle cx="0" cy="-1" r="4.300" fill="#2b3340"/></g><circle cx="0" cy="-1" r="3.200" fill="url(#rw)"/><circle cx="-1.100" cy="-2.200" r=".9" fill="#fff" opacity=".85"/><path d="M-6.500 8H6.500" stroke="#b7c2cf" stroke-width="1"/></g></g><g id="bm" style="display:none"><polygon points="26.0,0.0 12.6,3.4 22.5,13.0 9.2,9.2 13.0,22.5 3.4,12.6 0.0,26.0 -3.4,12.6 -13.0,22.5 -9.2,9.2 -22.5,13.0 -12.6,3.4 -26.0,0.0 -12.6,-3.4 -22.5,-13.0 -9.2,-9.2 -13.0,-22.5 -3.4,-12.6 -0.0,-26.0 3.4,-12.6 13.0,-22.5 9.2,-9.2 22.5,-13.0 12.6,-3.4" fill="#ff4d1a" stroke="#1a1a1a" stroke-width="1.2" stroke-linejoin="round"/><polygon points="17.8,2.3 8.3,3.4 14.3,10.9 5.5,7.1 6.9,16.6 1.2,8.9 -2.3,17.8 -3.4,8.3 -10.9,14.3 -7.1,5.5 -16.6,6.9 -8.9,1.2 -17.8,-2.3 -8.3,-3.4 -14.3,-10.9 -5.5,-7.1 -6.9,-16.6 -1.2,-8.9 2.3,-17.8 3.4,-8.3 10.9,-14.3 7.1,-5.5 16.6,-6.9 8.9,-1.2" fill="#ffb02e"/><polygon points="9.8,2.0 4.4,2.5 6.8,7.4 2.1,4.5 1.1,9.9 -1.0,4.9 -4.9,8.7 -3.7,3.4 -9.1,4.2 -5.0,0.6 -9.8,-2.0 -4.4,-2.5 -6.8,-7.4 -2.1,-4.5 -1.1,-9.9 1.0,-4.9 4.9,-8.7 3.7,-3.4 9.1,-4.2 5.0,-0.6" fill="#fff6b0"/></g></svg>`;
+function curMult(){return cur=='flip'?1.95:cur=='dice'?diceM():cur=='slots'?25:(busy&&cp&&!cp.dead?cp.v:1)}
+function upd(){const e=$('earn');if(!e)return;const b=Math.max(0,Math.floor(+$('bet').value)||0);e.textContent=(b*curMult()).toFixed(2)}
+function side(k){
+ const ex={flip:`<div class="lbl">PICK A SIDE</div><div class="seg" id="seg"><button class="on" onclick="pick2('H')">Heads</button><button onclick="pick2('T')">Tails</button></div>`,
+  dice:`<div class="lbl">MODE</div><div class="seg"><button id="mo" class="on" onclick="dmode('o')">Roll over</button><button id="mu" onclick="dmode('u')">Roll under</button></div>`,slots:'',crash:''}[k];
+ const bt={flip:`<button class="go" onclick="flip()">Flip</button>`,dice:`<button class="go" id="rl" onclick="dice()">Roll</button>`,slots:`<button class="go" id="sp" onclick="spin()">Spin</button>`,crash:`<button class="go" id="cs" onclick="crashStart()">Start</button><button class="go alt" id="cc" onclick="crashCash()" disabled>Cash out</button>`}[k];
+ return `<div class="side"><div class="lbl">BET AMOUNT</div><div class="fld">${COIN}<input id="bet" type="number" min="1" value="100" oninput="upd()"><button class="mini" onclick="adj(.5)">1/2</button><button class="mini" onclick="adj(2)">2x</button><button class="mini" onclick="mx()">Max</button></div><div class="lbl">${k=='slots'?'MAX WIN':'TOTAL EARNINGS'}</div><div class="fld">${COIN}<b id="earn">0</b></div>${ex}${bt}<div class="msg" id="msg"></div></div>`}
+function stage0(k){
+ if(k=='flip')return `<div class="stage"><img class="cface" id="cimg" src="${IMG.H}" alt="coin"><div class="desc" style="margin-top:18px">Pays 1.95×</div></div>`;
+ if(k=='slots')return `<div class="stage"><div class="reels"><span id="r0">🍒</span><span id="r1">🍋</span><span id="r2">7️⃣</span></div><div class="desc" style="margin-top:14px">Pair 1.5× · Triple 5× · 777 = 25×</div></div>`;
+ if(k=='dice')return `<div class="stage"><div class="dres" id="d">--</div><div class="dtrack"><input type="range" id="dr" min="0" max="100" step="0.5" value="50.5" oninput="dslide()"><div class="dmark" id="dm"></div></div><div class="ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div><div class="trio"><div><div class="lbl">MULTIPLIER</div><div class="fld"><b id="fm">1.98</b><i>x</i></div></div><div><div class="lbl" id="fl">ROLL OVER</div><div class="fld"><b id="ft">50.50</b></div></div><div><div class="lbl">WIN CHANCE</div><div class="fld"><b id="fc">49.50</b><i>%</i></div></div></div></div>`;
+ return `<div class="stage chartst"><div class="big" id="cm">1.00×</div>${CHART}</div>`}
+const BADGE='<span class="bdg"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>Play money</span>';
+function stage(k){return stage0(k).replace(/^(<div class="stage[^>]*>)/,'$1'+BADGE)}
+function topup(){if(busy)return;bal+=500;save();upd();msg('+500 play coins',1)}
+function pick2(s){fp=s;[...document.querySelectorAll('#seg button')].forEach((el,i)=>el.classList.toggle('on',(i==0)==(s=='H')))}
+function dmode(m){dmo=m;$('mo').classList.toggle('on',m=='o');$('mu').classList.toggle('on',m=='u');dslide()}
+function diceM(){const t=+$('dr').value||50,ch=dmo=='o'?100-t:t;return 98/Math.max(ch,1)}
+function dslide(){let t=+$('dr').value;if(t<2)t=2;if(t>98)t=98;$('dr').value=t;const ch=dmo=='o'?100-t:t,R='#7f3d44',G='#2b6b5a';
+ $('fm').textContent=(98/ch).toFixed(2);$('ft').textContent=t.toFixed(2);$('fc').textContent=ch.toFixed(2);$('fl').textContent=dmo=='o'?'ROLL OVER':'ROLL UNDER';
+ $('dr').style.background='linear-gradient(90deg,'+(dmo=='o'?R:G)+' '+t+'%,'+(dmo=='o'?G:R)+' '+t+'%)';upd()}
+function flip(){if(busy)return;const p=fp,b=bet();if(!b)return;busy=true;bal-=b;save();const c=$('cimg');c.classList.remove('spin');void c.offsetWidth;c.classList.add('spin');let n=0;const iv=setInterval(()=>{c.src=IMG[n++%2?'H':'T']},110);setTimeout(()=>{clearInterval(iv);const r=Math.random()<.5?'H':'T';c.src=IMG[r];c.classList.remove('spin');busy=false;end(b,r==p?1.95:0,(r=='H'?'Heads':'Tails')+'! '+(r==p?'Win!':'Lost.'))},900)}
+function dice(){if(busy)return;const b=bet();if(!b)return;busy=true;bal-=b;save();const t=+$('dr').value,d=$('d'),mk=$('dm');$('rl').disabled=true;mk.style.display='none';d.style.color='';const iv=setInterval(()=>{d.textContent=(Math.random()*100).toFixed(2)},50);
+ setTimeout(()=>{clearInterval(iv);const r=Math.floor(Math.random()*10000)/100,w=dmo=='o'?r>t:r<t;d.textContent=r.toFixed(2);d.style.color=w?'#2ecc71':'#ff4d5e';mk.style.display='block';mk.style.left=r+'%';mk.style.background=w?'#2ecc71':'#ff4d5e';busy=false;$('rl').disabled=false;end(b,w?98/(dmo=='o'?100-t:t):0,w?'Win!':'Lost.')},700)}
+function go(k){if(busy)return;cur=k;
+ $('main').innerHTML=k=='home'?home():`<div class="gm">${side(k)}${stage(k)}</div>${note}`;
+ ['home','crash','dice','slots','flip'].forEach(x=>$('s_'+x).classList.toggle('on',x==k));$('n_home').classList.toggle('on',k=='home');$('main').scrollTop=0;$('main').className=k=='home'?'':'game';if(k!='home'){fp='H';dmo='o';upd();if(k=='dice')dslide()}if(k=='crash'){cp={pts:[1],dead:true};crashDraw(cp.pts,false)}}
+const sym=['🍒','🍋','🔔','💎','7️⃣'],wts=[30,28,20,14,8];
+function pick(){let r=Math.random()*100,a=0;for(let i=0;i<5;i++){a+=wts[i];if(r<a)return sym[i]}return sym[0]}
+function spin(){if(busy)return;const b=bet();if(!b)return;busy=true;bal-=b;save();$('sp').disabled=true;const res=[pick(),pick(),pick()];let t=0;const iv=setInterval(()=>{for(let i=0;i<3;i++)if(t<8+i*6)$('r'+i).textContent=sym[Math.floor(Math.random()*5)];t++;if(t>=20){clearInterval(iv);for(let i=0;i<3;i++)$('r'+i).textContent=res[i];busy=false;$('sp').disabled=false;const [a,c,d]=res;let m=0,l='No luck.';if(a==c&&c==d){m=a=='7️⃣'?25:5;l=m==25?'JACKPOT!':'Triple!'}else if(a==c||c==d||a==d){m=1.5;l='Pair!'}end(b,m,l)}},70)}
+let VIEW=null;
+function crashDraw(pts,dead){const W=400,H=240,P=14,PL=42,n=pts.length,mx=Math.max(...pts);
+ if(n<=1||!VIEW)VIEW={xm:60,ym:2};
+ VIEW.xm+=(Math.max(60,n*1.2)-VIEW.xm)*.04;VIEW.ym+=(Math.max(2,mx*1.3)-VIEW.ym)*.04;
+ VIEW.xm=Math.max(VIEW.xm,n*1.02);VIEW.ym=Math.max(VIEW.ym,mx*1.12);
+ const xm=VIEW.xm,ym=VIEW.ym;
+ const px=i=>PL+i/(xm-1)*(W-PL-P),py=v=>H-P-(v-1)/(ym-1)*(H-2*P);
+ const s=pts.map((v,i)=>px(i).toFixed(1)+','+py(v).toFixed(1)).join(' ');
+ let g='';const raw=(ym-1)/10,mg=Math.pow(10,Math.floor(Math.log10(raw))),stp=[1,2,5,10].map(k=>k*mg).find(s=>s>=raw*.999),fd=stp>=1?0:(Math.round(stp*100)%10?2:1);
+ for(let k=Math.ceil(1/stp-1e-9);k*stp<=ym+1e-9;k++){const v=k*stp,y=py(v).toFixed(1);g+='<path d="M'+PL+' '+y+'H'+(W-P)+'" stroke="#1f2733"/><text x="'+(PL-6)+'" y="'+(+y+3.5)+'" text-anchor="end" fill="#8592a3" font-size="10">'+v.toFixed(fd)+'×</text>'}
+ $('yl').innerHTML=g;
+ $('cl').setAttribute('points',s);$('cl').setAttribute('stroke',dead?'#ff4d5e':'#22c55e');
+ $('ca').setAttribute('d','M'+px(0)+','+(H-P)+' L'+s.split(' ').join(' L')+' L'+px(n-1)+','+(H-P)+'Z');
+ $('ca').setAttribute('fill',dead?'rgba(255,77,94,.15)':'url(#ag)');
+ const x=px(n-1),y=py(pts[n-1]),k=Math.max(0,n-5);let a=45;
+ if(n>1){a=Math.atan2(x-px(k),-(y-py(pts[k])))*180/Math.PI}
+ a=Math.max(-80,Math.min(170,a));
+ $('rk').setAttribute('transform','translate('+x+','+y+') rotate('+a+')');
+ $('fl').setAttribute('d','M-4 17Q0 '+(24+Math.random()*12)+' 4 17Z');
+ $('bm').setAttribute('transform','translate('+x+','+y+') scale(.6)');
+ upd();return [x,y]}
+function crashStart(){if(busy)return;const b=bet();if(!b)return;busy=true;bal-=b;save();
+ const cr=Math.max(1,0.99/(1-Math.random()));
+ cp={b,cr,m:1,w:0,v:1,pts:[1],dead:false};
+ $('cs').disabled=true;$('cc').disabled=false;$('cm').style.color='';$('rk').style.display='';$('bm').style.display='none';msg('');crashDraw(cp.pts,false);
+ cp.iv=setInterval(()=>{
+  cp.m*=1.02;
+  if(cp.m>=cr){clearInterval(cp.iv);cp.dead=true;$('cc').disabled=true;let f=0,last=cp.v;
+   const iv2=setInterval(()=>{f++;cp.pts.push(1+(last-1)*Math.pow(.55,f));crashDraw(cp.pts,true);
+    if(f>=8){clearInterval(iv2);$('rk').style.display='none';$('bm').style.display='';$('cm').textContent=cr.toFixed(2)+'×';$('cm').style.color='#ff4d5e';$('cs').disabled=false;busy=false;end(b,0,'Crashed!')}},60);
+   return}
+  cp.w=Math.max(-.04,Math.min(.04,cp.w+(Math.random()-.5)*.025));
+  cp.v=Math.min(Math.max(1,cp.m*(1+cp.w)),cr*.995);
+  cp.pts.push(cp.v);crashDraw(cp.pts,false);$('cm').textContent=cp.v.toFixed(2)+'×'},80)}
+function crashCash(){if(!cp||!busy||cp.dead)return;clearInterval(cp.iv);$('cc').disabled=true;$('cs').disabled=false;busy=false;end(cp.b,cp.v,'Cashed out at '+cp.v.toFixed(2)+'×!')}
+function fit(){const w=innerWidth,h=innerHeight,ok=typeof CSS!='undefined'&&CSS.supports&&CSS.supports('zoom','2'),f=(!ok||w<=700)?1:Math.max(.6,Math.min(w/1250,h/820,3)),r=document.documentElement;r.style.zoom=f;r.style.setProperty('--H',(h/f)+'px')}
+addEventListener('resize',fit);fit();
+save();go('home');
+</script>
+</body>
+</html>
