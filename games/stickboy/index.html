@@ -4,9 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>stickboy</title>
+<script>
+/* opened as /games/stickboy (no trailing slash)? the browser would look for style.css & game.js one folder up — add the slash first */
+if (location.protocol !== "file:" && !location.pathname.endsWith("/") && !location.pathname.endsWith(".html"))
+  location.replace(location.pathname + "/" + location.search + location.hash);
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 <div id="wrap">
@@ -22,7 +27,7 @@
   <div id="screen"></div>
 </div>
 
-<script src="chunks.js"></script>
-<script src="game.js"></script>
+<script src="chunks.js?v=2"></script>
+<script src="game.js?v=2"></script>
 </body>
 </html>

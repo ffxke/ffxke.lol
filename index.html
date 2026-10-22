@@ -90,33 +90,15 @@ function typeStatus(text){
   if (text === typedText) return;
   typedText = text;
   const el = document.getElementById("ptext"), chars = Array.from(text);   // Array.from keeps emoji in one piece
-  clearTimeout(typeTimer); cancelAnimationFrame(slideRaf);
-  el.textContent = ""; el.scrollLeft = 0; el.classList.add("typing");
+  clearTimeout(typeTimer);
+  el.textContent = ""; el.classList.add("typing");
   let i = 0;
   (function next(){
     if (!live) { typeTimer = setTimeout(next, 100); return; }
     el.textContent = chars.slice(0, ++i).join("");
-    el.scrollLeft = el.scrollWidth;              // one line: keep the newest letters in view while typing
     if (i < chars.length) typeTimer = setTimeout(next, TYPE_MS);
-    else { el.classList.remove("typing"); typeTimer = setTimeout(() => slideStatus(el), 2000); }
+    else el.classList.remove("typing");
   })();
-}
-/* status longer than the line? after typing, glide back and forth slowly so the whole thing can be read */
-let slideRaf = 0;
-function slideStatus(el){
-  const max = el.scrollWidth - el.clientWidth;
-  if (max <= 1) return;                         // it fits, nothing to do
-  let pos = el.scrollLeft, dir = -1, pause = 0, last = performance.now();
-  (function tick(now){
-    const dt = Math.min(now - last, 50) / 1000; last = now;
-    if (pause > 0) pause -= dt;
-    else {
-      pos += dir * 28 * dt;                     // 28 px per second
-      if (pos <= 0 || pos >= max) { pos = Math.max(0, Math.min(max, pos)); dir = -dir; pause = 2; }
-      el.scrollLeft = pos;
-    }
-    slideRaf = requestAnimationFrame(tick);
-  })(last);
 }
 function setPresence(d){
   const st = LABELS[d.status] ? d.status : "offline";
