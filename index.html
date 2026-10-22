@@ -96,10 +96,25 @@ function typeStatus(text){
   (function next(){
     if (!live) { typeTimer = setTimeout(next, 100); return; }
     el.textContent = chars.slice(0, ++i).join("");
+    fitStatus();
     if (i < chars.length) typeTimer = setTimeout(next, TYPE_MS);
     else el.classList.remove("typing");
   })();
 }
+/* keep the whole status visible on one line: if it is wider than the screen, shrink the text to fit.
+   (only on very long statuses on small phones does it fall back to wrapping onto a 2nd line) */
+const STATUS_MIN_PX = 7;
+function fitStatus(){
+  const el = document.getElementById("ptext");
+  el.style.fontSize = ""; el.style.whiteSpace = "";
+  const avail = Math.min(innerWidth, document.documentElement.clientWidth) * 0.94 - 16;   // minus the status dot
+  const w = el.scrollWidth;
+  if (w <= avail) return;
+  const size = parseFloat(getComputedStyle(el).fontSize) * avail / w;
+  el.style.fontSize = Math.max(STATUS_MIN_PX, size) + "px";
+  if (size < STATUS_MIN_PX) el.style.whiteSpace = "normal";
+}
+addEventListener("resize", fitStatus);
 function setPresence(d){
   const st = LABELS[d.status] ? d.status : "offline";
   const cs = d.customStatus;
