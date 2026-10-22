@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>stickboy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="wrap">
+  <canvas id="cv"></canvas>
+  <div class="scan"></div>
+
+  <div id="hud" class="hidden">
+    <div id="tl"><small id="lvl">LEVEL 1</small><b id="lt">00:00.00</b></div>
+    <div id="tc"><span class="gr">◆ <em id="gr">0</em></span><span class="gb">◆ <em id="gb">0</em></span><span>☠ <em id="dc">0</em></span></div>
+    <div id="tr"><small>TOTAL</small><b id="tt">00:00.00</b></div>
+  </div>
+
+  <div id="screen"></div>
+</div>
+
+<script src="chunks.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
