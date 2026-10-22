@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>crypto defense</title>
+<script>
+/* opened as /games/cryptodefense (no trailing slash)? add it so style.css & game.js load from this folder */
+if (location.protocol !== "file:" && !location.pathname.endsWith("/") && !location.pathname.endsWith(".html"))
+  location.replace(location.pathname + "/" + location.search + location.hash);
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+<div id="wrap">
+  <canvas id="cv"></canvas>
+  <div class="scan"></div>
+  <div id="screen"></div>
+</div>
+<script src="game.js?v=3"></script>
+</body>
+</html>
