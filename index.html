@@ -152,10 +152,10 @@ profile.links.forEach(l => {
 /* view counter: shared by everyone, stored on abacus (free counter service, no account needed).
    Each browser adds 1 view the first time it visits; after that the page just reads the total,
    so refreshing doesn't inflate the count. If the service is down it falls back to this browser's own count. */
-const COUNTER = "https://abacus.jasoncameron.dev", COUNTER_KEY = "ffxke.lol/profile-views";
+const COUNTER = "https://abacus.jasoncameron.dev", COUNTER_KEY = "ffxke.lol/revictimised-views";
 let localViews = 1, counted = false;
 try { localViews = (+localStorage.getItem("bc_views") || 0) + 1; localStorage.setItem("bc_views", localViews);
-      counted = localStorage.getItem("bc_counted_pv") === "1"; } catch(e){}
+      counted = localStorage.getItem("bc_counted_rv") === "1"; } catch(e){}
 async function counterCall(action){
   const r = await fetch(COUNTER + "/" + action + "/" + COUNTER_KEY, { cache: "no-store" });
   if (!r.ok) throw r.status;
@@ -165,7 +165,7 @@ const viewsReady = (async () => {
   try {
     let n;
     if (counted) { try { n = await counterCall("get"); } catch(s) { if (s !== 404) throw s; n = await counterCall("hit"); } }
-    else { n = await counterCall("hit"); try { localStorage.setItem("bc_counted_pv", "1"); } catch(e){} }
+    else { n = await counterCall("hit"); try { localStorage.setItem("bc_counted_rv", "1"); } catch(e){} }
     return typeof n === "number" && n > 0 ? n : localViews;
   } catch(e) { console.warn("view counter unavailable, showing local count", e); return localViews; }
 })();
