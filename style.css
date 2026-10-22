@@ -21,7 +21,9 @@ h1{margin-top:32px;font-family:"UnifrakturCook","Old English Text MT",Georgia,se
   color:var(--accent);letter-spacing:.04em;text-shadow:0 0 10px var(--glow),0 0 22px var(--glow);animation:flick 5s infinite}
 @keyframes flick{0%,92%,100%{opacity:1}94%{opacity:.7}96%{opacity:1}98%{opacity:.8}}
 .presence{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:8px;max-width:min(92vw,300px);font-size:.62rem;letter-spacing:.1em;color:var(--muted)}
-#ptext{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ptext{white-space:normal;overflow-wrap:anywhere;text-align:center}   /* wraps so the full status always shows */
+#ptext.typing::after{content:"▍";margin-left:1px;animation:caret .8s steps(2) infinite}
+@keyframes caret{50%{opacity:0}}
 .pdot{width:7px;height:7px;border-radius:50%;background:#6b6b75;flex:none;transition:background .3s,box-shadow .3s}
 .pdot.online{background:#3ddc84;box-shadow:0 0 8px #3ddc84}
 .pdot.idle{background:#f5a623;box-shadow:0 0 8px #f5a623}

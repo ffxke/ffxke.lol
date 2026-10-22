@@ -81,6 +81,25 @@ function actText(a, type){
   if (type === 1) return details || name;                                        // stream title
   return [name, details || state].filter(Boolean).join(" · ");                   // game · what you're doing
 }
+/* typewriter: types the status out one letter at a time until the whole thing is shown.
+   It only restarts when the status actually changes (the 30s refresh won't retype the same text),
+   and it waits until the visitor has clicked "enter" so they see it from the start. */
+const TYPE_MS = 70;                        // delay per letter in ms (higher = slower)
+let typedText = null, typeTimer = 0;
+function typeStatus(text){
+  if (text === typedText) return;
+  typedText = text;
+  const el = document.getElementById("ptext"), chars = Array.from(text);   // Array.from keeps emoji in one piece
+  clearTimeout(typeTimer);
+  el.textContent = ""; el.classList.add("typing");
+  let i = 0;
+  (function next(){
+    if (!live) { typeTimer = setTimeout(next, 100); return; }
+    el.textContent = chars.slice(0, ++i).join("");
+    if (i < chars.length) typeTimer = setTimeout(next, TYPE_MS);
+    else el.classList.remove("typing");
+  })();
+}
 function setPresence(d){
   const st = LABELS[d.status] ? d.status : "offline";
   const cs = d.customStatus;
@@ -89,7 +108,7 @@ function setPresence(d){
   const custom = list.find(a => actType(a) === 4);
   if (!txt && custom) txt = custom.state || "";
   document.getElementById("pdot").className = "pdot " + st;
-  document.getElementById("ptext").textContent = txt || LABELS[st];
+  typeStatus(txt || LABELS[st]);
 
   // one line per activity (game, stream, music, ...), up to 4
   const box = document.getElementById("acts");
